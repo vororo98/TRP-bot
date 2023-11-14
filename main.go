@@ -3,7 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -81,6 +85,32 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if m.Content == BotPrefix+"ping" {
 		_, _ = s.ChannelMessageSend(m.ChannelID, "pong")
+	} else if strings.Contains(m.Content, "roll:") { //I want to parse a command like roll:1d6 or roll:10d20
+		expRes := regexp.MustCompile("[0-9]+")
+		result := expRes.FindAllStringSubmatch(m.Content, -1)
+
+		rolls, err := strconv.Atoi(result[0][0])
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		rollType, err := strconv.Atoi(result[1][0])
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		message := "You rolled:"
+		total := 0
+
+		for i := 0; i < rolls; i++ {
+			roll := rand.Intn(rollType + 1)
+			total += roll
+			message += " " + strconv.Itoa(roll) + ","
+		}
+
+		message += " = " + strconv.Itoa(total)
+		_, _ = s.ChannelMessageSend(m.ChannelID, message)
 	}
 }
 
